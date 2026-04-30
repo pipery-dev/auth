@@ -16,6 +16,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt"
   },
+  pages: {
+    signIn: "/"
+  },
   callbacks: {
     async jwt({ token, account, profile }: any) {
       if (account?.access_token) {
@@ -32,6 +35,11 @@ export const authOptions: NextAuthOptions = {
       session.accessToken = token.accessToken;
       session.user.login = token.login;
       return session;
+    },
+    async redirect({ url, baseUrl }: any) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     }
   },
   cookies: {

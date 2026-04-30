@@ -3,11 +3,20 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-export default async function Home() {
+export default async function Home(props: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const searchParams = await props.searchParams;
   const session = await getServerSession(authOptions);
 
   if (session) {
-    redirect("https://dash.pipery.dev");
+    const callbackUrl = searchParams.callbackUrl || "https://dash.pipery.dev";
+    redirect(callbackUrl);
+  }
+
+  const signinUrl = new URL("/api/auth/signin/github", "https://auth.pipery.dev");
+  if (searchParams.callbackUrl) {
+    signinUrl.searchParams.set("callbackUrl", searchParams.callbackUrl);
   }
 
   return (
@@ -18,7 +27,7 @@ export default async function Home() {
           <p className="text-gray-600 text-sm mb-8">Sign in to access Pipery Dashboard and Workflow Generator</p>
 
           <Link
-            href="/api/auth/signin/github"
+            href={signinUrl.toString()}
             className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
