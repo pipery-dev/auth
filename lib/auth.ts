@@ -1,6 +1,10 @@
 import GitHubProvider from "next-auth/providers/github";
 import { NextAuthOptions, DefaultSession } from "next-auth";
 
+const generateTraceId = () => {
+  return `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GitHubProvider({
