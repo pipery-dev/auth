@@ -8,8 +8,19 @@ export default async function Home(props: {
 }) {
   const searchParams = await props.searchParams;
   const session = await getServerSession(authOptions);
+  const requestedProvider = searchParams.provider === "gitlab" ? "gitlab" : "github";
+  const activeProvider = session?.provider || "github";
 
   if (session) {
+    if (searchParams.callbackUrl && activeProvider !== requestedProvider) {
+      const signinUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
+      signinUrl.searchParams.set("callbackUrl", searchParams.callbackUrl);
+
+      const logoutUrl = new URL("/api/auth/logout", "https://auth.pipery.dev");
+      logoutUrl.searchParams.set("callbackUrl", signinUrl.toString());
+      redirect(logoutUrl.toString());
+    }
+
     if (searchParams.callbackUrl) {
       redirect(searchParams.callbackUrl);
     }
@@ -18,8 +29,7 @@ export default async function Home(props: {
 
   // Auto-redirect to signin if callbackUrl is present (no intermediate page needed)
   if (searchParams.callbackUrl) {
-    const provider = searchParams.provider === "gitlab" ? "gitlab" : "github";
-    const signinUrl = new URL(`/api/auth/signin/${provider}`, "https://auth.pipery.dev");
+    const signinUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
     signinUrl.searchParams.set("callbackUrl", searchParams.callbackUrl);
     redirect(signinUrl.toString());
   }

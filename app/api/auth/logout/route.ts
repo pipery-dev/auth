@@ -1,8 +1,24 @@
-import { signOut } from "next-auth/react";
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  return NextResponse.json({ message: "Use NextAuth signOut instead" });
+const COOKIE_NAMES = [
+  "__Secure-next-auth.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.callback-url",
+  "next-auth.callback-url",
+  "__Host-next-auth.csrf-token",
+  "next-auth.csrf-token"
+];
+
+function expireCookie(response: NextResponse, name: string, domain?: string) {
+  response.cookies.set(name, "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    domain,
+    expires: new Date(0),
+    maxAge: 0,
+    path: "/"
+  });
 }
 
 export async function GET(request: Request) {
@@ -10,8 +26,14 @@ export async function GET(request: Request) {
   const callbackUrl = searchParams.get("callbackUrl") || "https://dash.pipery.dev";
 
   const response = NextResponse.redirect(callbackUrl);
-  response.cookies.delete("__Secure-next-auth.session-token");
-  response.cookies.delete("next-auth.csrf-token");
+
+  for (const name of COOKIE_NAMES) {
+    expireCookie(response, name);
+    if (!name.startsWith("__Host-")) {
+      expireCookie(response, name, ".pipery.dev");
+      expireCookie(response, name, "auth.pipery.dev");
+    }
+  }
 
   return response;
 }
