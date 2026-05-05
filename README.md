@@ -27,3 +27,7 @@ https://auth.pipery.dev?provider=gitlab&callbackUrl=https%3A%2F%2Fstart.pipery.d
 
 When `callbackUrl` is present, the service redirects directly into the selected provider sign-in flow.
 Callback URLs are only honored for allowlisted origins, and the shared session stores GitHub and GitLab account tokens separately so one provider login does not overwrite the other.
+
+## TODO
+
+- Add an explicit app/client id plus signed state per Pipery app so auth can cryptographically verify whether dashboard or workflow-gen initiated a login request.
