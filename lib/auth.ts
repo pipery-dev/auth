@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
       allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
-          scope: "repo user:email" // Full repo scope for both auth and PR creation
+          scope: "repo workflow user:email" // Includes workflow write access for PR creation.
         }
       }
     }),

@@ -4,7 +4,7 @@ Shared NextAuth service for Pipery apps.
 
 Supported providers:
 
-- GitHub OAuth with `repo user:email` scope for repository listing and PR creation.
+- GitHub OAuth with `repo workflow user:email` scope for repository listing and workflow PR creation.
 - GitLab OAuth with `read_user api` scope for project listing and merge request creation.
 
 ## Environment
