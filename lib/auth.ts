@@ -1,6 +1,7 @@
 import GitHubProvider from "next-auth/providers/github";
 import GitLabProvider from "next-auth/providers/gitlab";
 import { NextAuthOptions, DefaultSession } from "next-auth";
+import { safeCallbackUrl } from "./redirects";
 
 const gitHubId = process.env.GITHUB_ID?.trim() || "";
 // Use write-scope secret by default (works for both read and write operations)
@@ -46,8 +47,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, account, profile }: any) {
       if (account?.access_token) {
+        const provider = account.provider as "github" | "gitlab";
+        const login = profile?.login || profile?.username || token.login;
+        token.accounts = {
+          ...(token.accounts as any),
+          [provider]: {
+            accessToken: account.access_token,
+            login
+          }
+        };
         token.accessToken = account.access_token;
-        token.provider = account.provider;
+        token.provider = provider;
       }
 
       if (profile?.login) {
@@ -60,16 +70,18 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }: any) {
-      session.accessToken = token.accessToken;
+      session.accounts = token.accounts || {};
       session.provider = token.provider;
+      session.accessToken =
+        session.provider && session.accounts[session.provider]?.accessToken
+          ? session.accounts[session.provider].accessToken
+          : token.accessToken;
       session.user.login = token.login;
       return session;
     },
     async redirect({ url, baseUrl }: any) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      if (url.includes("start.pipery.dev") || url.includes("dash.pipery.dev")) return url;
-      return baseUrl;
+      return safeCallbackUrl(url, baseUrl);
     }
   },
   cookies: {
@@ -90,6 +102,7 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string;
     provider?: string;
+    accounts?: Record<string, { accessToken?: string; login?: string }>;
     user: {
       login?: string;
     } & DefaultSession["user"];
@@ -99,5 +112,6 @@ declare module "next-auth" {
     accessToken?: string;
     provider?: string;
     login?: string;
+    accounts?: Record<string, { accessToken?: string; login?: string }>;
   }
 }

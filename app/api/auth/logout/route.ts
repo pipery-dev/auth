@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeCallbackUrl } from "@/lib/redirects";
 
 const COOKIE_NAMES = [
   "__Secure-next-auth.session-token",
@@ -23,7 +24,7 @@ function expireCookie(response: NextResponse, name: string, domain?: string) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const callbackUrl = searchParams.get("callbackUrl") || "https://dash.pipery.dev";
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
 
   const response = NextResponse.redirect(callbackUrl);
 
