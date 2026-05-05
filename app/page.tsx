@@ -4,20 +4,28 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function Home(props: {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; provider?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const session = await getServerSession(authOptions);
 
   if (session) {
-    const callbackUrl = searchParams.callbackUrl || "https://dash.pipery.dev";
-    redirect(callbackUrl);
+    if (searchParams.callbackUrl) {
+      redirect(searchParams.callbackUrl);
+    }
+    redirect("https://dash.pipery.dev");
   }
 
-  const signinUrl = new URL("/api/auth/signin/github", "https://auth.pipery.dev");
+  // Auto-redirect to signin if callbackUrl is present (no intermediate page needed)
   if (searchParams.callbackUrl) {
+    const provider = searchParams.provider === "gitlab" ? "gitlab" : "github";
+    const signinUrl = new URL(`/api/auth/signin/${provider}`, "https://auth.pipery.dev");
     signinUrl.searchParams.set("callbackUrl", searchParams.callbackUrl);
+    redirect(signinUrl.toString());
   }
+
+  const githubSigninUrl = new URL("/api/auth/signin/github", "https://auth.pipery.dev");
+  const gitlabSigninUrl = new URL("/api/auth/signin/gitlab", "https://auth.pipery.dev");
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -27,7 +35,7 @@ export default async function Home(props: {
           <p className="text-gray-600 text-sm mb-8">Sign in to access Pipery Dashboard and Workflow Generator</p>
 
           <Link
-            href={signinUrl.toString()}
+            href={githubSigninUrl.toString()}
             className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -40,8 +48,15 @@ export default async function Home(props: {
             Sign in with GitHub
           </Link>
 
+          <Link
+            href={gitlabSigninUrl.toString()}
+            className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
+          >
+            Sign in with GitLab
+          </Link>
+
           <p className="text-center text-xs text-gray-500 mt-6">
-            By signing in, you agree to Pipery's terms and authorize us to access your GitHub repositories and actions.
+            By signing in, you agree to Pipery&apos;s terms and authorize us to access your selected GitHub or GitLab repositories.
           </p>
         </div>
       </div>
