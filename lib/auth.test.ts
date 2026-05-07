@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import { authOptionsForProvider, BitbucketProvider, providerSessionCookieName } from "./auth";
 
 describe("Bitbucket OAuth provider", () => {
-  it("requests Bitbucket OAuth scopes without OpenID defaults", () => {
+  it("uses authorization code flow without requesting OpenID scopes", () => {
     const provider = BitbucketProvider({ clientId: "id", clientSecret: "secret" });
 
     expect(provider.id).toBe("bitbucket");
     expect(provider.authorization).toMatchObject({
       url: "https://bitbucket.org/site/oauth2/authorize",
       params: {
-        scope: "account repository pipeline"
+        response_type: "code",
+        scope: ""
       }
     });
-    expect((provider.authorization as any).params?.scope).not.toContain("openid");
   });
 
   it("keeps the Bitbucket OAuth endpoints and token auth method stable", () => {

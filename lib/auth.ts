@@ -15,7 +15,6 @@ const gitLabId = process.env.GITLAB_ID?.trim() || "";
 const gitLabSecret = process.env.GITLAB_SECRET?.trim() || "";
 const bitbucketId = process.env.BITBUCKET_ID?.trim() || "";
 const bitbucketSecret = process.env.BITBUCKET_SECRET?.trim() || "";
-const bitbucketScope = process.env.BITBUCKET_SCOPE?.trim() || "account repository pipeline";
 function providerCookiePrefix(provider: PiperyProvider) {
   return `${process.env.PIPERY_AUTH_SESSION_COOKIE_PREFIX || DEFAULT_SESSION_COOKIE_PREFIX}.${provider}`;
 }
@@ -52,7 +51,7 @@ export function BitbucketProvider(options: { clientId: string; clientSecret: str
     authorization: {
       url: "https://bitbucket.org/site/oauth2/authorize",
       params: {
-        scope: bitbucketScope
+        response_type: "code"
       }
     },
     token: "https://bitbucket.org/site/oauth2/access_token",

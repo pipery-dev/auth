@@ -6,7 +6,7 @@ Supported providers:
 
 - GitHub OAuth with `repo workflow user:email` scope for repository listing and workflow PR creation.
 - GitLab OAuth with `read_user api` scope for project listing and merge request creation.
-- Bitbucket Cloud OAuth requests `account repository pipeline` by default. Grant the same scopes on the Bitbucket OAuth consumer.
+- Bitbucket Cloud OAuth uses authorization code grant. Scopes are configured on the Bitbucket OAuth consumer, not requested per login.
 
 ## Environment
 
@@ -17,7 +17,6 @@ GITLAB_ID=your_gitlab_oauth_app_client_id
 GITLAB_SECRET=your_gitlab_oauth_app_client_secret
 BITBUCKET_ID=your_bitbucket_oauth_consumer_key
 BITBUCKET_SECRET=your_bitbucket_oauth_consumer_secret
-BITBUCKET_SCOPE=account repository pipeline
 NEXTAUTH_SECRET=replace_with_a_long_random_secret
 NEXTAUTH_URL=https://auth.pipery.dev
 PIPERY_AUTH_SESSION_COOKIE_PREFIX=__Secure-pipery-auth
