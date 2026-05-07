@@ -43,7 +43,7 @@ type BitbucketProfile = {
   };
 };
 
-function BitbucketProvider(options: { clientId: string; clientSecret: string }): OAuthConfig<BitbucketProfile> {
+export function BitbucketProvider(options: { clientId: string; clientSecret: string }): OAuthConfig<BitbucketProfile> {
   return {
     id: "bitbucket",
     name: "Bitbucket Cloud",
