@@ -11,6 +11,7 @@ export default async function Home(props: {
   searchParams: Promise<{ callbackUrl?: string; provider?: string; client_id?: string; state?: string }>;
 }) {
   const searchParams = await props.searchParams;
+  const authBaseUrl = process.env.NEXTAUTH_URL || "https://auth.pipery.dev";
   const hasExternalAppRequest = !!(searchParams.client_id || searchParams.state);
   const verifiedState = hasExternalAppRequest
     ? verifyClientState(searchParams.client_id, searchParams.state)
@@ -35,7 +36,7 @@ export default async function Home(props: {
   const session = await getServerSession(authOptionsForProvider(requestedProvider));
   const callbackUrl = safeCallbackUrl(requestedCallbackUrl);
   const hasRequestedProvider = !!session?.accounts?.[requestedProvider]?.accessToken;
-  const requestedSigninUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
+  const requestedSigninUrl = new URL(`/api/auth/signin/${requestedProvider}`, authBaseUrl);
   requestedSigninUrl.searchParams.set("callbackUrl", callbackUrl);
 
   if (session) {
@@ -53,9 +54,9 @@ export default async function Home(props: {
     return <ProviderRedirect provider={requestedProvider} signInUrl={requestedSigninUrl.toString()} />;
   }
 
-  const githubSigninUrl = new URL("/api/auth/signin/github", "https://auth.pipery.dev");
-  const gitlabSigninUrl = new URL("/api/auth/signin/gitlab", "https://auth.pipery.dev");
-  const bitbucketSigninUrl = new URL("/api/auth/signin/bitbucket", "https://auth.pipery.dev");
+  const githubSigninUrl = new URL("/api/auth/signin/github", authBaseUrl);
+  const gitlabSigninUrl = new URL("/api/auth/signin/gitlab", authBaseUrl);
+  const bitbucketSigninUrl = new URL("/api/auth/signin/bitbucket", authBaseUrl);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">

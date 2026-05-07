@@ -3,6 +3,11 @@ import { safeCallbackUrl } from "@/lib/redirects";
 
 const PROVIDERS = ["github", "gitlab", "bitbucket"] as const;
 type Provider = (typeof PROVIDERS)[number];
+const DEFAULT_SESSION_COOKIE_PREFIX = "__Secure-pipery-auth";
+
+function sessionCookiePrefix() {
+  return process.env.PIPERY_AUTH_SESSION_COOKIE_PREFIX || DEFAULT_SESSION_COOKIE_PREFIX;
+}
 
 const LEGACY_COOKIE_NAMES = [
   "__Secure-pipery-auth.session-token",
@@ -17,9 +22,12 @@ const LEGACY_COOKIE_NAMES = [
 ];
 
 function providerCookieNames(provider: Provider) {
+  const prefixes = new Set([sessionCookiePrefix(), DEFAULT_SESSION_COOKIE_PREFIX]);
   return [
-    `__Secure-pipery-auth.${provider}.session-token`,
-    `__Secure-pipery-auth.${provider}.callback-url`,
+    ...Array.from(prefixes).flatMap(prefix => [
+      `${prefix}.${provider}.session-token`,
+      `${prefix}.${provider}.callback-url`
+    ]),
     `__Host-pipery-auth.${provider}.csrf-token`
   ];
 }
@@ -50,7 +58,7 @@ export async function GET(request: Request) {
     .filter(Boolean);
 
   const baseCookieNames = providerScope
-    ? providerCookieNames(providerScope)
+    ? [...providerCookieNames(providerScope), ...LEGACY_COOKIE_NAMES]
     : [...PROVIDERS.flatMap(providerCookieNames), ...LEGACY_COOKIE_NAMES];
   const cookiePrefixes = baseCookieNames.map(name => `${name}.`);
 
