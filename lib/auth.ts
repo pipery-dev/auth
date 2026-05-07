@@ -176,7 +176,7 @@ export function authOptionsForProvider(cookieProvider: PiperyProvider = "github"
         }
       },
       csrfToken: {
-        name: `__Host-pipery-auth.${cookieProvider}.csrf-token`,
+        name: "__Host-pipery-auth.csrf-token",
         options: {
           httpOnly: true,
           sameSite: "lax",
