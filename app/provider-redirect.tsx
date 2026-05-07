@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { signIn } from "next-auth/react";
 
 type Provider = "github" | "gitlab" | "bitbucket";
 
@@ -18,20 +19,24 @@ const providerStyles: Record<Provider, string> = {
 
 export default function ProviderRedirect({
   provider,
-  signInUrl
+  callbackUrl
 }: {
   provider: Provider;
-  signInUrl: string;
+  callbackUrl: string;
 }) {
   const providerLabel = providerLabels[provider];
 
+  const startSignIn = () => {
+    void signIn(provider, { callbackUrl });
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      window.location.assign(signInUrl);
+      startSignIn();
     }, 800);
 
     return () => window.clearTimeout(timeout);
-  }, [signInUrl]);
+  }, [provider, callbackUrl]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -47,12 +52,13 @@ export default function ProviderRedirect({
               If the redirect does not happen automatically, use the button below to continue.
             </p>
           </div>
-          <a
-            href={signInUrl}
+          <button
+            type="button"
+            onClick={startSignIn}
             className={`w-full flex items-center justify-center gap-2 text-white font-medium py-3 px-4 rounded-lg transition-colors ${providerStyles[provider]}`}
           >
             Sign in with {providerLabel}
-          </a>
+          </button>
         </div>
       </div>
     </div>

@@ -2,10 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptionsForProvider } from "@/lib/auth";
 import { safeCallbackUrl } from "@/lib/redirects";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import ProviderRedirect from "./provider-redirect";
 import InvalidState from "./invalid-state";
 import { verifyClientState } from "@/lib/client-state";
+import ProviderSignInButton from "./provider-sign-in-button";
 
 export default async function Home(props: {
   searchParams: Promise<{ callbackUrl?: string; provider?: string; client_id?: string; state?: string }>;
@@ -36,12 +36,10 @@ export default async function Home(props: {
   const session = await getServerSession(authOptionsForProvider(requestedProvider));
   const callbackUrl = safeCallbackUrl(requestedCallbackUrl);
   const hasRequestedProvider = !!session?.accounts?.[requestedProvider]?.accessToken;
-  const requestedSigninUrl = new URL(`/api/auth/signin/${requestedProvider}`, authBaseUrl);
-  requestedSigninUrl.searchParams.set("callbackUrl", callbackUrl);
 
   if (session) {
     if (requestedCallbackUrl && !hasRequestedProvider) {
-      return <ProviderRedirect provider={requestedProvider} signInUrl={requestedSigninUrl.toString()} />;
+      return <ProviderRedirect provider={requestedProvider} callbackUrl={callbackUrl} />;
     }
 
     if (requestedCallbackUrl) {
@@ -51,12 +49,8 @@ export default async function Home(props: {
   }
 
   if (shouldUseProviderHandoff) {
-    return <ProviderRedirect provider={requestedProvider} signInUrl={requestedSigninUrl.toString()} />;
+    return <ProviderRedirect provider={requestedProvider} callbackUrl={callbackUrl} />;
   }
-
-  const githubSigninUrl = new URL("/api/auth/signin/github", authBaseUrl);
-  const gitlabSigninUrl = new URL("/api/auth/signin/gitlab", authBaseUrl);
-  const bitbucketSigninUrl = new URL("/api/auth/signin/bitbucket", authBaseUrl);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -65,10 +59,7 @@ export default async function Home(props: {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Pipery Auth</h1>
           <p className="text-gray-600 text-sm mb-8">Sign in to access Pipery Dashboard and Workflow Generator</p>
 
-          <Link
-            href={githubSigninUrl.toString()}
-            className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
-          >
+          <ProviderSignInButton provider="github" callbackUrl={authBaseUrl}>
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -77,21 +68,15 @@ export default async function Home(props: {
               />
             </svg>
             Sign in with GitHub
-          </Link>
+          </ProviderSignInButton>
 
-          <Link
-            href={gitlabSigninUrl.toString()}
-            className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
-          >
+          <ProviderSignInButton provider="gitlab" callbackUrl={authBaseUrl}>
             Sign in with GitLab
-          </Link>
+          </ProviderSignInButton>
 
-          <Link
-            href={bitbucketSigninUrl.toString()}
-            className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
-          >
+          <ProviderSignInButton provider="bitbucket" callbackUrl={authBaseUrl}>
             Sign in with Bitbucket Cloud
-          </Link>
+          </ProviderSignInButton>
 
           <p className="text-center text-xs text-gray-500 mt-6">
             By signing in, you agree to Pipery&apos;s terms and authorize us to access your selected GitHub, GitLab, or Bitbucket Cloud repositories.
