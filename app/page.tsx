@@ -1,40 +1,61 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptionsForProvider } from "@/lib/auth";
 import { safeCallbackUrl } from "@/lib/redirects";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import ProviderRedirect from "./provider-redirect";
+import InvalidState from "./invalid-state";
+import { verifyClientState } from "@/lib/client-state";
 
 export default async function Home(props: {
-  searchParams: Promise<{ callbackUrl?: string; provider?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; provider?: string; client_id?: string; state?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const session = await getServerSession(authOptions);
-  const requestedProvider = searchParams.provider === "gitlab" ? "gitlab" : "github";
-  const callbackUrl = safeCallbackUrl(searchParams.callbackUrl);
+  const hasExternalAppRequest = !!(searchParams.client_id || searchParams.state);
+  const verifiedState = hasExternalAppRequest
+    ? verifyClientState(searchParams.client_id, searchParams.state)
+    : null;
+
+  if (verifiedState && !verifiedState.ok) {
+    return <InvalidState error={verifiedState.error} />;
+  }
+
+  const signedPayload = verifiedState?.ok ? verifiedState.payload : null;
+  const hasExplicitProvider = searchParams.provider === "github" || searchParams.provider === "gitlab" || searchParams.provider === "bitbucket";
+  const requestedProvider =
+    signedPayload?.provider ||
+    (searchParams.provider === "gitlab" || searchParams.provider === "bitbucket"
+      ? searchParams.provider
+      : searchParams.provider === "github"
+        ? "github"
+        : undefined) ||
+    "github";
+  const requestedCallbackUrl = signedPayload?.callbackUrl || searchParams.callbackUrl;
+  const shouldUseProviderHandoff = !!signedPayload || hasExplicitProvider;
+  const session = await getServerSession(authOptionsForProvider(requestedProvider));
+  const callbackUrl = safeCallbackUrl(requestedCallbackUrl);
   const hasRequestedProvider = !!session?.accounts?.[requestedProvider]?.accessToken;
+  const requestedSigninUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
+  requestedSigninUrl.searchParams.set("callbackUrl", callbackUrl);
 
   if (session) {
-    if (searchParams.callbackUrl && !hasRequestedProvider) {
-      const signinUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
-      signinUrl.searchParams.set("callbackUrl", callbackUrl);
-      redirect(signinUrl.toString());
+    if (requestedCallbackUrl && !hasRequestedProvider) {
+      return <ProviderRedirect provider={requestedProvider} signInUrl={requestedSigninUrl.toString()} />;
     }
 
-    if (searchParams.callbackUrl) {
+    if (requestedCallbackUrl) {
       redirect(callbackUrl);
     }
     redirect("https://dash.pipery.dev");
   }
 
-  // Auto-redirect to signin if callbackUrl is present (no intermediate page needed)
-  if (searchParams.callbackUrl) {
-    const signinUrl = new URL(`/api/auth/signin/${requestedProvider}`, "https://auth.pipery.dev");
-    signinUrl.searchParams.set("callbackUrl", callbackUrl);
-    redirect(signinUrl.toString());
+  if (shouldUseProviderHandoff) {
+    return <ProviderRedirect provider={requestedProvider} signInUrl={requestedSigninUrl.toString()} />;
   }
 
   const githubSigninUrl = new URL("/api/auth/signin/github", "https://auth.pipery.dev");
   const gitlabSigninUrl = new URL("/api/auth/signin/gitlab", "https://auth.pipery.dev");
+  const bitbucketSigninUrl = new URL("/api/auth/signin/bitbucket", "https://auth.pipery.dev");
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -64,8 +85,15 @@ export default async function Home(props: {
             Sign in with GitLab
           </Link>
 
+          <Link
+            href={bitbucketSigninUrl.toString()}
+            className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-medium py-3 px-4 rounded-lg transition-colors mb-6"
+          >
+            Sign in with Bitbucket Cloud
+          </Link>
+
           <p className="text-center text-xs text-gray-500 mt-6">
-            By signing in, you agree to Pipery&apos;s terms and authorize us to access your selected GitHub or GitLab repositories.
+            By signing in, you agree to Pipery&apos;s terms and authorize us to access your selected GitHub, GitLab, or Bitbucket Cloud repositories.
           </p>
         </div>
       </div>
