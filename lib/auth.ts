@@ -51,7 +51,8 @@ export function BitbucketProvider(options: { clientId: string; clientSecret: str
     authorization: {
       url: "https://bitbucket.org/site/oauth2/authorize",
       params: {
-        response_type: "code"
+        response_type: "code",
+        scope: "account email"
       }
     },
     token: "https://bitbucket.org/site/oauth2/access_token",
