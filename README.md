@@ -6,7 +6,7 @@ Supported providers:
 
 - GitHub OAuth with `repo workflow user:email` scope for repository listing and workflow PR creation.
 - GitLab OAuth with `read_user api` scope for project listing and merge request creation.
-- Bitbucket Cloud OAuth with `account email repository pullrequest` scope for Bitbucket identity and repository access.
+- Bitbucket Cloud OAuth uses the scopes configured on the Bitbucket OAuth consumer. Grant repository and pull request permissions there; Account read is optional for richer profile details.
 
 ## Environment
 

@@ -49,13 +49,28 @@ function BitbucketProvider(options: { clientId: string; clientSecret: string }):
     name: "Bitbucket Cloud",
     type: "oauth",
     authorization: {
-      url: "https://bitbucket.org/site/oauth2/authorize",
-      params: {
-        scope: "account email repository pullrequest"
-      }
+      url: "https://bitbucket.org/site/oauth2/authorize"
     },
     token: "https://bitbucket.org/site/oauth2/access_token",
-    userinfo: "https://api.bitbucket.org/2.0/user",
+    userinfo: {
+      url: "https://api.bitbucket.org/2.0/user",
+      async request({ tokens }) {
+        const response = await fetch("https://api.bitbucket.org/2.0/user", {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`
+          }
+        });
+
+        if (response.ok) {
+          return response.json();
+        }
+
+        return {
+          account_id: "bitbucket-user",
+          display_name: "Bitbucket User"
+        };
+      }
+    },
     client: {
       token_endpoint_auth_method: "client_secret_basic"
     },
