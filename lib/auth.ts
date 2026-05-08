@@ -52,7 +52,7 @@ export function BitbucketProvider(options: { clientId: string; clientSecret: str
       url: "https://bitbucket.org/site/oauth2/authorize",
       params: {
         response_type: "code",
-        scope: "account email"
+        scope: "account email repository repository:write pullrequest pullrequest:write"
       }
     },
     token: "https://bitbucket.org/site/oauth2/access_token",
