@@ -1,0 +1,10 @@
+apiVersion: v2
+name: pipery-auth
+description: Dex-backed OIDC provider for Pipery apps.
+type: application
+version: 0.1.0
+appVersion: "2.42.0"
+dependencies:
+  - name: dex
+    version: "0.23.0"
+    repository: https://charts.dexidp.io

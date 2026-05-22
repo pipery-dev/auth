@@ -1,44 +1,77 @@
 # Pipery Auth
 
-Shared NextAuth service for Pipery apps.
+Pipery Auth is now a Dex-backed OIDC service.
 
-Supported providers:
-
-- GitHub OAuth with `repo workflow user:email` scope for repository listing and workflow PR creation.
-- GitLab OAuth with `read_user api` scope for project listing and merge request creation.
-- Bitbucket Cloud OAuth uses authorization code grant. Scopes are configured on the Bitbucket OAuth consumer, not requested per login.
-
-## Environment
-
-```bash
-GITHUB_ID=your_github_oauth_app_client_id
-GITHUB_SECRET=your_github_oauth_app_client_secret
-GITLAB_ID=your_gitlab_oauth_app_client_id
-GITLAB_SECRET=your_gitlab_oauth_app_client_secret
-BITBUCKET_ID=your_bitbucket_oauth_consumer_key
-BITBUCKET_SECRET=your_bitbucket_oauth_consumer_secret
-NEXTAUTH_SECRET=replace_with_a_long_random_secret
-NEXTAUTH_URL=https://auth.pipery.dev
-PIPERY_AUTH_SESSION_COOKIE_PREFIX=__Secure-pipery-auth
-PIPERY_AUTH_ALLOWED_CALLBACK_ORIGINS=https://auth.pipery.dev,https://dash.pipery.dev,https://start.pipery.dev
-PIPERY_AUTH_DASHBOARD_CLIENT_ID=pipery-dashboard
-PIPERY_AUTH_DASHBOARD_STATE_SECRET=shared_hmac_secret_for_dashboard
-PIPERY_AUTH_WORKFLOW_GEN_CLIENT_ID=pipery-workflow-gen
-PIPERY_AUTH_WORKFLOW_GEN_STATE_SECRET=shared_hmac_secret_for_workflow_gen
-```
-
-The login page accepts an optional `provider` query parameter:
+Dex is the single issuer for Pipery apps:
 
 ```text
-https://auth.pipery.dev?provider=gitlab&callbackUrl=https%3A%2F%2Fstart.pipery.dev%2Fauth%2Fcallback%3Fprovider%3Dgitlab%26next%3D%252Fwizard
+https://auth.pipery.dev/dex
 ```
 
-Callback URLs are only honored for allowlisted origins, and the shared session stores GitHub, GitLab, and Bitbucket Cloud account tokens separately so one provider login does not overwrite the other.
+It brokers login through GitHub, GitLab, and Bitbucket Cloud connectors, and exposes separate OIDC clients for:
 
-When a valid `provider` is supplied, Pipery Auth shows a short provider handoff screen and auto-redirects to that provider. The page keeps a single provider-specific login button as a fallback if the redirect does not happen. Without `provider`, the auth page shows all login options.
+- `pipery-dashboard`
+- `pipery-workflow-gen`
+- `pipery-release-bot`
+- `pipery-deploy-bot`
 
-App-originated login requests must include `client_id` and signed `state`. The state is an HMAC-signed payload containing the Pipery app id, requested provider, callback URL, nonce, and issue time. Auth verifies this before trusting the callback URL or provider, so dashboard and workflow-gen login requests are cryptographically tied to their configured client ids.
+## Helm
 
-`PIPERY_AUTH_SESSION_COOKIE_PREFIX` must match the dashboard and workflow generator value. The auth service writes provider-specific session cookies such as `__Secure-pipery-auth.github.session-token`, `__Secure-pipery-auth.gitlab.session-token`, and `__Secure-pipery-auth.bitbucket.session-token`. Logout also clears old generic NextAuth cookie names so existing browser sessions can recover cleanly.
+The chart wraps the upstream Dex chart:
 
-Logout accepts an optional `provider` query parameter. For example, `/api/auth/logout?provider=gitlab&callbackUrl=...` clears only the GitLab cookies; omitting `provider` clears every Pipery provider session.
+```bash
+helm dependency update charts/pipery-auth
+helm upgrade --install pipery-auth charts/pipery-auth -n pipery
+```
+
+Required secrets:
+
+```text
+pipery-dex-connectors:
+  github-client-id
+  github-client-secret
+  gitlab-client-id
+  gitlab-client-secret
+  bitbucket-client-id
+  bitbucket-client-secret
+
+pipery-dex-clients:
+  dashboard-client-secret
+  workflow-gen-client-secret
+  release-bot-client-secret
+  deploy-bot-client-secret
+```
+
+## App Configuration
+
+The bots validate Dex bearer tokens when configured:
+
+```bash
+PIPERY_DEX_ISSUER=https://auth.pipery.dev/dex
+PIPERY_RELEASE_DEX_CLIENT_ID=pipery-release-bot
+PIPERY_DEPLOY_DEX_CLIENT_ID=pipery-deploy-bot
+```
+
+Dashboard and workflow generator use direct GitHub, GitLab, and Bitbucket Cloud OAuth so they can keep provider API tokens for repository operations. Dex still registers static clients for those apps so the issuer can be used for future OIDC-only flows that do not need provider API tokens.
+
+The app redirect URLs are:
+
+```text
+https://dash.pipery.dev/api/auth/callback/github
+https://dash.pipery.dev/api/auth/callback/gitlab
+https://dash.pipery.dev/api/auth/callback/bitbucket
+https://start.pipery.dev/api/auth/callback/github
+https://start.pipery.dev/api/auth/callback/gitlab
+https://start.pipery.dev/api/auth/callback/bitbucket
+```
+
+The existing static API token env vars still work for workflow-triggered automation:
+
+```bash
+PIPERY_RELEASE_API_TOKEN=...
+PIPERY_DEPLOY_API_TOKEN=...
+```
+
+## Provider Tokens
+
+Dex handles identity. GitHub, GitLab, and Bitbucket API access should be performed with app installation tokens, bot credentials, or scoped automation tokens owned by the relevant Pipery service.

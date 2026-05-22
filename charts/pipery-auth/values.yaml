@@ -1,0 +1,114 @@
+dex:
+  config:
+    issuer: https://auth.pipery.dev/dex
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    web:
+      http: 0.0.0.0:5556
+    oauth2:
+      skipApprovalScreen: true
+    connectors:
+      - type: github
+        id: github
+        name: GitHub
+        config:
+          clientID: $GITHUB_CLIENT_ID
+          clientSecret: $GITHUB_CLIENT_SECRET
+          redirectURI: https://auth.pipery.dev/dex/callback
+          scopes:
+            - read:user
+            - user:email
+            - repo
+            - workflow
+      - type: gitlab
+        id: gitlab
+        name: GitLab
+        config:
+          baseURL: https://gitlab.com
+          clientID: $GITLAB_CLIENT_ID
+          clientSecret: $GITLAB_CLIENT_SECRET
+          redirectURI: https://auth.pipery.dev/dex/callback
+          scopes:
+            - read_user
+            - api
+      - type: bitbucket-cloud
+        id: bitbucket
+        name: Bitbucket Cloud
+        config:
+          clientID: $BITBUCKET_CLIENT_ID
+          clientSecret: $BITBUCKET_CLIENT_SECRET
+          redirectURI: https://auth.pipery.dev/dex/callback
+    staticClients:
+      - id: pipery-dashboard
+        name: Pipery Dashboard
+        secretEnv: PIPERY_DASHBOARD_CLIENT_SECRET
+        redirectURIs:
+          - https://dash.pipery.dev/api/auth/callback/dex
+      - id: pipery-workflow-gen
+        name: Pipery Workflow Generator
+        secretEnv: PIPERY_WORKFLOW_GEN_CLIENT_SECRET
+        redirectURIs:
+          - https://start.pipery.dev/api/auth/callback/dex
+      - id: pipery-release-bot
+        name: Pipery Release Bot
+        secretEnv: PIPERY_RELEASE_BOT_CLIENT_SECRET
+        redirectURIs:
+          - https://release-bot.pipery.dev/oauth/callback
+      - id: pipery-deploy-bot
+        name: Pipery Deploy Bot
+        secretEnv: PIPERY_DEPLOY_BOT_CLIENT_SECRET
+        redirectURIs:
+          - https://deploy-bot.pipery.dev/oauth/callback
+  envVars:
+    - name: GITHUB_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: github-client-id
+    - name: GITHUB_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: github-client-secret
+    - name: GITLAB_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: gitlab-client-id
+    - name: GITLAB_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: gitlab-client-secret
+    - name: BITBUCKET_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: bitbucket-client-id
+    - name: BITBUCKET_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-connectors
+          key: bitbucket-client-secret
+    - name: PIPERY_DASHBOARD_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-clients
+          key: dashboard-client-secret
+    - name: PIPERY_WORKFLOW_GEN_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-clients
+          key: workflow-gen-client-secret
+    - name: PIPERY_RELEASE_BOT_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-clients
+          key: release-bot-client-secret
+    - name: PIPERY_DEPLOY_BOT_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: pipery-dex-clients
+          key: deploy-bot-client-secret

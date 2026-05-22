@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+      - name: Update chart dependencies
+        run: helm dependency update charts/pipery-auth
+      - name: Lint chart
+        run: helm lint charts/pipery-auth
+      - name: Render chart
+        run: helm template pipery-auth charts/pipery-auth
+
+  argocd-release:
+    needs: helm
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publish ArgoCD Helm chart update
+        uses: pipery-dev/pipery-argocd-cd@v1
+        with:
+          publish_helm_chart_update: "true"
+          argocd_repository: pipery-dev/pipery-argocd
+          argocd_repository_token: ${{ secrets.PIPERY_ARGOCD_TOKEN }}
+          app_name: pipery-auth
+          app_namespace: pipery
+          chart_path: charts/pipery-auth
+          chart_target_revision: ${{ github.ref_name }}
+          commit_user_name: pipery-auth
+          commit_user_email: pipery-auth@users.noreply.github.com
