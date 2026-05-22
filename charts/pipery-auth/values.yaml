@@ -63,30 +63,21 @@ dex:
           - https://deploy-bot.pipery.dev/oauth/callback
   envVars:
     - name: GITHUB_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: pipery-dex-connectors
-          key: github-client-id
+      value: ""
     - name: GITHUB_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
           name: pipery-dex-connectors
           key: github-client-secret
     - name: GITLAB_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: pipery-dex-connectors
-          key: gitlab-client-id
+      value: ""
     - name: GITLAB_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
           name: pipery-dex-connectors
           key: gitlab-client-secret
     - name: BITBUCKET_CLIENT_ID
-      valueFrom:
-        secretKeyRef:
-          name: pipery-dex-connectors
-          key: bitbucket-client-id
+      value: ""
     - name: BITBUCKET_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
