@@ -12,13 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: azure/setup-helm@v4
-      - name: Update chart dependencies
-        run: helm dependency update charts/pipery-auth
-      - name: Lint chart
-        run: helm lint charts/pipery-auth
-      - name: Render chart
-        run: helm template pipery-auth charts/pipery-auth
+      - uses: pipery-dev/pipery-argocd-cd@v1
+        with:
+          validate_helm_chart: "true"
+          app_name: pipery-auth
+          chart_path: charts/pipery-auth
+          skip_update: "true"
+          skip_sync: "true"
+          skip_status_check: "true"
 
   argocd-release:
     needs: helm
