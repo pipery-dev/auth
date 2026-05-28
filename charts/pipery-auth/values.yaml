@@ -112,3 +112,17 @@ dex:
         secretKeyRef:
           name: pipery-dex-clients
           key: deploy-bot-client-secret
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: auth.pipery.dev
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: 
+    - secretName: pipery.dev-wildcart
+      hosts:
+        - *.pipery.dev
